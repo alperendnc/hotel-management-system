@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { useThemeMode } from "../../context/ThemeContext";
 import {
   Alert,
   Box,
@@ -133,6 +133,8 @@ function SettingsSection({ icon, title, description, children }) {
 }
 
 function Settings() {
+  const { isDarkMode, setThemeMode } = useThemeMode();
+  
   const [hotelSettings, setHotelSettings] = useState(
     initialHotelSettings,
   );
@@ -517,11 +519,12 @@ function Settings() {
             >
               <FormControlLabel
                 control={
-                  <Switch
-                    name="darkMode"
-                    checked={systemSettings.darkMode}
-                    onChange={handleSystemSettingsChange}
-                  />
+                <Switch
+                 checked={isDarkMode}
+                  onChange={(event) =>
+                    setThemeMode(event.target.checked ? "dark" : "light")
+                 }
+            />
                 }
                 label="Karanlık mod"
                 sx={{

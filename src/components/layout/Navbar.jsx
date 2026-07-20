@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { useThemeMode } from "../../context/ThemeContext";
 import {
   AppBar,
   Avatar,
@@ -13,12 +13,13 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-
 import {
+  FaMagnifyingGlass,
+  FaMoon,
+  FaRightFromBracket,
   FaBars,
   FaBell,
-  FaMagnifyingGlass,
-  FaRightFromBracket,
+  FaSun,
   FaUser,
 } from "react-icons/fa6";
 
@@ -38,6 +39,7 @@ function Navbar({ onMenuClick }) {
   const navigate = useNavigate();
 
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useThemeMode();
 
   const pageTitle =
     pageTitles[location.pathname] || "Otel Yönetimi";
@@ -182,6 +184,35 @@ function Navbar({ onMenuClick }) {
             }}
           />
 
+         <Tooltip
+  title={
+    isDarkMode
+      ? "Açık temaya geç"
+      : "Koyu temaya geç"
+  }
+>
+  <IconButton
+    type="button"
+    onClick={toggleTheme}
+    aria-label="Temayı değiştir"
+    sx={{
+      width: 42,
+      height: 42,
+      borderRadius: 2.5,
+      backgroundColor: "action.hover",
+
+      "&:hover": {
+        backgroundColor: "action.selected",
+      },
+    }}
+  >
+    {isDarkMode ? (
+      <FaSun size={18} />
+    ) : (
+      <FaMoon size={17} />
+    )}
+  </IconButton>
+</Tooltip>
           <Tooltip title="Bildirimler">
             <IconButton
               aria-label="Bildirimler"
