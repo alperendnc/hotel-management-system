@@ -11,23 +11,20 @@ import Housekeeping from "../pages/Housekeeping/Housekeeping";
 import Staff from "../pages/Staff/Staff";
 import Reports from "../pages/Reports/Reports";
 import Settings from "../pages/Settings/Settings";
+import Guests from "../pages/Guests/guests";
 
 function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
+            <Route path="/guests" element={<Guests />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/rooms" element={<Rooms />} />
-          <Route
-            path="/housekeeping"
-            element={<Housekeeping />}
-          />
+          <Route path="/housekeeping" element={<Housekeeping />} />
           <Route path="/staff" element={<Staff />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />

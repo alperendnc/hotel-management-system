@@ -32,6 +32,7 @@ const pageTitles = {
   "/staff": "Personeller",
   "/reports": "Raporlar",
   "/settings": "Ayarlar",
+  "/guests": "Misafirler",
 };
 
 function Navbar({ onMenuClick }) {
