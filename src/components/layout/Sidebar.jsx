@@ -57,6 +57,11 @@ const menuItems = [
     path: "/settings",
     icon: <FaGear />,
   },
+  {
+    title: "Misafirler",
+    path: "/guests",
+    icon: <FaUsers />,
+  }
 ];
 
 function SidebarContent({ onNavigate }) {
