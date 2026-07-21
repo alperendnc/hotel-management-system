@@ -4,7 +4,10 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
+  LinearProgress,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -14,9 +17,16 @@ import {
   Typography,
 } from "@mui/material";
 
+import { useNavigate } from "react-router-dom";
+
 import {
+  FaArrowRight,
   FaBed,
   FaBroom,
+  FaCalendarCheck,
+  FaCalendarXmark,
+  FaCircleExclamation,
+  FaCreditCard,
   FaDoorOpen,
   FaUserCheck,
 } from "react-icons/fa6";
@@ -60,105 +70,186 @@ const summaryCards = [
   },
 ];
 
+const todayOperations = [
+  {
+    id: 1,
+    title: "Bugünkü Girişler",
+    value: 12,
+    description: "4 misafir henüz giriş yapmadı",
+    icon: <FaCalendarCheck />,
+    color: "success.main",
+    backgroundColor: "success.lighter",
+    path: "/guests",
+  },
+  {
+    id: 2,
+    title: "Bugünkü Çıkışlar",
+    value: 9,
+    description: "3 oda çıkış işlemi bekliyor",
+    icon: <FaCalendarXmark />,
+    color: "error.main",
+    backgroundColor: "error.lighter",
+    path: "/guests",
+  },
+  {
+    id: 3,
+    title: "Bekleyen Ödemeler",
+    value: 6,
+    description: "Toplam 24.500 TL ödeme bekliyor",
+    icon: <FaCreditCard />,
+    color: "warning.main",
+    backgroundColor: "warning.lighter",
+    path: "/guests",
+  },
+];
+
+const housekeepingSummary = [
+  {
+    id: 1,
+    label: "Temiz Odalar",
+    value: 96,
+    total: 120,
+    color: "success",
+  },
+  {
+    id: 2,
+    label: "Temizlik Bekleyen",
+    value: 8,
+    total: 120,
+    color: "warning",
+  },
+  {
+    id: 3,
+    label: "Temizleniyor",
+    value: 11,
+    total: 120,
+    color: "primary",
+  },
+  {
+    id: 4,
+    label: "Bakımda",
+    value: 5,
+    total: 120,
+    color: "error",
+  },
+];
+
 const recentRooms = [
   {
+    id: 1,
     roomNumber: "101",
     guest: "Ahmet Yılmaz",
     status: "Dolu",
+    operation: "Giriş yapıldı",
     time: "10 dakika önce",
   },
   {
+    id: 2,
     roomNumber: "204",
     guest: "Elif Demir",
     status: "Çıkış Yapıldı",
+    operation: "Çıkış işlemi tamamlandı",
     time: "25 dakika önce",
   },
   {
+    id: 3,
     roomNumber: "305",
     guest: "Mehmet Kaya",
     status: "Temizlikte",
+    operation: "Temizlik görevi oluşturuldu",
     time: "40 dakika önce",
   },
   {
+    id: 4,
     roomNumber: "410",
     guest: "Zeynep Çelik",
     status: "Rezerve",
+    operation: "Yeni rezervasyon oluşturuldu",
     time: "1 saat önce",
+  },
+  {
+    id: 5,
+    roomNumber: "206",
+    guest: "Michael Brown",
+    status: "Dolu",
+    operation: "Oda değişikliği yapıldı",
+    time: "2 saat önce",
   },
 ];
 
 function getStatusColor(status) {
-  switch (status) {
-    case "Dolu":
-      return "success";
+  const statusColors = {
+    Dolu: "success",
+    "Çıkış Yapıldı": "error",
+    Temizlikte: "warning",
+    Rezerve: "primary",
+  };
 
-    case "Çıkış Yapıldı":
-      return "error";
-
-    case "Temizlikte":
-      return "warning";
-
-    case "Rezerve":
-      return "primary";
-
-    default:
-      return "default";
-  }
+  return statusColors[status] || "default";
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
+
+  const totalRooms = 120;
+  const occupiedRooms = 78;
+
+  const occupancyRate = Math.round(
+    (occupiedRooms / totalRooms) * 100,
+  );
+
+  const currentDate = new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: {
-            xs: "flex-start",
-            sm: "center",
-          },
-          justifyContent: "space-between",
-          flexDirection: {
-            xs: "column",
-            sm: "row",
-          },
-          gap: 2,
-          mb: 3,
+      <Stack
+        direction={{
+          xs: "column",
+          sm: "row",
         }}
+        alignItems={{
+          xs: "flex-start",
+          sm: "center",
+        }}
+        justifyContent="space-between"
+        spacing={2}
+        mb={3}
       >
         <Box>
           <Typography
-            variant="h5"
-            component="h2"
-            sx={{
-              fontWeight: 700,
-            }}
+            variant="h4"
+            component="h1"
+            fontWeight={800}
           >
             Genel Bakış
           </Typography>
 
           <Typography
             variant="body2"
-            sx={{
-              mt: 0.75,
-              color: "text.secondary",
-            }}
+            color="text.secondary"
+            mt={0.75}
           >
-            Otelin güncel durumunu buradan takip edebilirsiniz.
+            Otelin güncel durumunu ve günlük işlemleri buradan
+            takip edebilirsiniz.
           </Typography>
         </Box>
 
         <Chip
-          label="Bugünkü Durum"
+          label={currentDate}
           variant="outlined"
           sx={{
             height: 38,
-            px: 0.5,
+            px: 0.75,
             borderRadius: 2.5,
-            backgroundColor: "background.paper",
+            bgcolor: "background.paper",
             fontWeight: 600,
           }}
         />
-      </Box>
+      </Stack>
 
       <Box
         sx={{
@@ -181,7 +272,8 @@ function Dashboard() {
               border: 1,
               borderColor: "divider",
               borderRadius: 3,
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              transition:
+                "transform 0.2s ease, box-shadow 0.2s ease",
 
               "&:hover": {
                 transform: "translateY(-3px)",
@@ -211,7 +303,7 @@ function Dashboard() {
                   flexShrink: 0,
                   borderRadius: 3,
                   color: card.iconColor,
-                  backgroundColor: card.iconBackground,
+                  bgcolor: card.iconBackground,
                   fontSize: 21,
                 }}
               >
@@ -221,33 +313,27 @@ function Dashboard() {
               <Box>
                 <Typography
                   variant="body2"
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 500,
-                  }}
+                  color="text.secondary"
+                  fontWeight={500}
                 >
                   {card.title}
                 </Typography>
 
                 <Typography
                   variant="h4"
-                  sx={{
-                    mt: 0.5,
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                  }}
+                  fontWeight={800}
+                  lineHeight={1.2}
+                  mt={0.5}
                 >
                   {card.value}
                 </Typography>
 
                 <Typography
                   variant="caption"
-                  sx={{
-                    display: "block",
-                    mt: 0.75,
-                    color: "text.disabled",
-                    lineHeight: 1.5,
-                  }}
+                  color="text.disabled"
+                  lineHeight={1.5}
+                  display="block"
+                  mt={0.75}
                 >
                   {card.description}
                 </Typography>
@@ -257,141 +343,572 @@ function Dashboard() {
         ))}
       </Box>
 
-      <Paper
-        elevation={0}
+      <Box
         sx={{
-          overflow: "hidden",
-          border: 1,
-          borderColor: "divider",
-          borderRadius: 3,
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            xl: "minmax(0, 1.7fr) minmax(320px, 1fr)",
+          },
+          gap: 2.5,
+          mb: 3,
         }}
       >
-        <Box
+        <Paper
+          elevation={0}
           sx={{
-            display: "flex",
-            alignItems: {
-              xs: "flex-start",
-              sm: "center",
-            },
-            justifyContent: "space-between",
-            flexDirection: {
-              xs: "column",
-              sm: "row",
-            },
-            gap: 2,
             p: 3,
-            borderBottom: 1,
+            border: 1,
             borderColor: "divider",
+            borderRadius: 3,
           }}
         >
-          <Box>
-            <Typography
-              variant="h6"
-              component="h3"
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            justifyContent="space-between"
+            spacing={2}
+            mb={3}
+          >
+            <Box>
+              <Typography
+                variant="h6"
+                fontWeight={800}
+              >
+                Günlük İşlemler
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mt={0.5}
+              >
+                Bugün gerçekleştirilmesi gereken otel işlemleri.
+              </Typography>
+            </Box>
+
+            <Chip
+              label="Canlı takip"
+              color="success"
+              size="small"
+              variant="outlined"
+            />
+          </Stack>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 2,
+            }}
+          >
+            {todayOperations.map((operation) => (
+              <Paper
+                key={operation.id}
+                variant="outlined"
+                sx={{
+                  p: 2.25,
+                  borderRadius: 3,
+                }}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="flex-start"
+                  justifyContent="space-between"
+                  spacing={2}
+                >
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      {operation.title}
+                    </Typography>
+
+                    <Typography
+                      variant="h4"
+                      fontWeight={800}
+                      mt={0.5}
+                    >
+                      {operation.value}
+                    </Typography>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      width: 43,
+                      height: 43,
+                      borderRadius: 2.5,
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: "action.hover",
+                      color: operation.color,
+                      fontSize: 18,
+                    }}
+                  >
+                    {operation.icon}
+                  </Box>
+                </Stack>
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                  minHeight={38}
+                  mt={1.5}
+                >
+                  {operation.description}
+                </Typography>
+
+                <Button
+                  type="button"
+                  size="small"
+                  endIcon={<FaArrowRight />}
+                  onClick={() => navigate(operation.path)}
+                  sx={{
+                    mt: 1,
+                    px: 0,
+                    fontWeight: 700,
+                  }}
+                >
+                  Detayları Gör
+                </Button>
+              </Paper>
+            ))}
+          </Box>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 3,
+          }}
+        >
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            spacing={2}
+          >
+            <Box>
+              <Typography
+                variant="h6"
+                fontWeight={800}
+              >
+                Oda Doluluk Oranı
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mt={0.5}
+              >
+                Otelin mevcut doluluk durumu.
+              </Typography>
+            </Box>
+
+            <Box
               sx={{
-                fontWeight: 700,
+                width: 46,
+                height: 46,
+                borderRadius: 2.5,
+                display: "grid",
+                placeItems: "center",
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                fontSize: 19,
               }}
             >
-              Son Oda Hareketleri
+              <FaBed />
+            </Box>
+          </Stack>
+
+          <Box
+            sx={{
+              py: 4,
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="h2"
+              fontWeight={800}
+              color="primary.main"
+            >
+              %{occupancyRate}
             </Typography>
 
             <Typography
               variant="body2"
-              sx={{
-                mt: 0.5,
-                color: "text.secondary",
-              }}
+              color="text.secondary"
+              mt={0.5}
             >
-              Odalarda gerçekleşen son işlemler.
+              {occupiedRooms} / {totalRooms} oda dolu
             </Typography>
           </Box>
 
+          <LinearProgress
+            variant="determinate"
+            value={occupancyRate}
+            sx={{
+              height: 10,
+              borderRadius: 10,
+              bgcolor: "action.hover",
+
+              "& .MuiLinearProgress-bar": {
+                borderRadius: 10,
+              },
+            }}
+          />
+
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            mt={1.5}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
+              Dolu: {occupiedRooms}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
+              Kullanılabilir: {totalRooms - occupiedRooms}
+            </Typography>
+          </Stack>
+
           <Button
             type="button"
-            variant="text"
+            fullWidth
+            variant="outlined"
+            endIcon={<FaArrowRight />}
+            onClick={() => navigate("/rooms")}
             sx={{
-              textTransform: "none",
+              mt: 3,
+              py: 1,
+              borderRadius: 2.5,
               fontWeight: 700,
             }}
           >
-            Tümünü Gör
+            Odaları Görüntüle
           </Button>
-        </Box>
+        </Paper>
+      </Box>
 
-        <TableContainer>
-          <Table sx={{ minWidth: 650 }}>
-            <TableHead>
-              <TableRow
-                sx={{
-                  backgroundColor: "action.hover",
-                }}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            lg: "minmax(0, 1.5fr) minmax(300px, 0.7fr)",
+          },
+          gap: 2.5,
+          mb: 3,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            overflow: "hidden",
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 3,
+          }}
+        >
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            alignItems={{
+              xs: "flex-start",
+              sm: "center",
+            }}
+            justifyContent="space-between"
+            spacing={2}
+            p={3}
+          >
+            <Box>
+              <Typography
+                variant="h6"
+                fontWeight={800}
               >
-                <TableCell sx={{ fontWeight: 700 }}>
-                  Oda Numarası
-                </TableCell>
+                Son Oda Hareketleri
+              </Typography>
 
-                <TableCell sx={{ fontWeight: 700 }}>
-                  Misafir
-                </TableCell>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mt={0.5}
+              >
+                Odalarda gerçekleşen son işlemler.
+              </Typography>
+            </Box>
 
-                <TableCell sx={{ fontWeight: 700 }}>
-                  Durum
-                </TableCell>
+            <Button
+              type="button"
+              variant="text"
+              endIcon={<FaArrowRight />}
+              onClick={() => navigate("/rooms")}
+              sx={{
+                fontWeight: 700,
+              }}
+            >
+              Tümünü Gör
+            </Button>
+          </Stack>
 
-                <TableCell sx={{ fontWeight: 700 }}>
-                  Zaman
-                </TableCell>
-              </TableRow>
-            </TableHead>
+          <Divider />
 
-            <TableBody>
-              {recentRooms.map((room) => (
+          <TableContainer>
+            <Table sx={{ minWidth: 750 }}>
+              <TableHead>
                 <TableRow
-                  key={room.roomNumber}
-                  hover
                   sx={{
-                    "&:last-child td": {
-                      borderBottom: 0,
-                    },
+                    bgcolor: "action.hover",
                   }}
                 >
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: 700,
-                      }}
-                    >
-                      Oda {room.roomNumber}
-                    </Typography>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Oda
                   </TableCell>
 
-                  <TableCell>{room.guest}</TableCell>
-
-                  <TableCell>
-                    <Chip
-                      label={room.status}
-                      color={getStatusColor(room.status)}
-                      size="small"
-                      sx={{
-                        fontWeight: 600,
-                      }}
-                    />
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Misafir
                   </TableCell>
 
-                  <TableCell
-                    sx={{
-                      color: "text.secondary",
-                    }}
-                  >
-                    {room.time}
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    İşlem
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Durum
+                  </TableCell>
+
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Zaman
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+              </TableHead>
+
+              <TableBody>
+                {recentRooms.map((room) => (
+                  <TableRow
+                    key={room.id}
+                    hover
+                    sx={{
+                      "&:last-child td": {
+                        borderBottom: 0,
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        fontWeight={800}
+                      >
+                        Oda {room.roomNumber}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>{room.guest}</TableCell>
+
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {room.operation}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label={room.status}
+                        color={getStatusColor(room.status)}
+                        size="small"
+                        sx={{
+                          fontWeight: 600,
+                        }}
+                      />
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
+                      {room.time}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 3,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="flex-start"
+            justifyContent="space-between"
+            spacing={2}
+            mb={3}
+          >
+            <Box>
+              <Typography
+                variant="h6"
+                fontWeight={800}
+              >
+                Housekeeping
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mt={0.5}
+              >
+                Güncel oda temizlik durumu.
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2.5,
+                display: "grid",
+                placeItems: "center",
+                bgcolor: "warning.main",
+                color: "warning.contrastText",
+                fontSize: 18,
+              }}
+            >
+              <FaBroom />
+            </Box>
+          </Stack>
+
+          <Stack spacing={2.5}>
+            {housekeepingSummary.map((item) => {
+              const percentage = Math.round(
+                (item.value / item.total) * 100,
+              );
+
+              return (
+                <Box key={item.id}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={0.75}
+                  >
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                    >
+                      {item.label}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      {item.value}
+                    </Typography>
+                  </Stack>
+
+                  <LinearProgress
+                    variant="determinate"
+                    value={percentage}
+                    color={item.color}
+                    sx={{
+                      height: 7,
+                      borderRadius: 10,
+                      bgcolor: "action.hover",
+
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: 10,
+                      },
+                    }}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+
+          <Paper
+            variant="outlined"
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 1.5,
+              p: 2,
+              mt: 3,
+              borderRadius: 2.5,
+              bgcolor: "action.hover",
+            }}
+          >
+            <Box
+              sx={{
+                color: "warning.main",
+                mt: 0.25,
+              }}
+            >
+              <FaCircleExclamation />
+            </Box>
+
+            <Box>
+              <Typography
+                variant="body2"
+                fontWeight={700}
+              >
+                8 oda temizlik bekliyor
+              </Typography>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+              >
+                Görev dağılımı yapılması gereken odalar bulunuyor.
+              </Typography>
+            </Box>
+          </Paper>
+
+          <Button
+            type="button"
+            fullWidth
+            variant="outlined"
+            endIcon={<FaArrowRight />}
+            onClick={() => navigate("/housekeeping")}
+            sx={{
+              mt: 3,
+              py: 1,
+              borderRadius: 2.5,
+              fontWeight: 700,
+            }}
+          >
+            Housekeeping Sayfasına Git
+          </Button>
+        </Paper>
+      </Box>
     </Box>
   );
 }
