@@ -18,6 +18,7 @@ import {
   FaChartColumn,
   FaGear,
   FaHotel,
+  FaCalendarDays,
   FaTableColumns,
   FaUsers,
 } from "react-icons/fa6";
@@ -37,6 +38,11 @@ const menuItems = [
     path: "/rooms",
     icon: <FaBed />,
   },
+  {
+  title: "Rezervasyonlar",
+  path: "/reservations",
+  icon: <FaCalendarDays />,
+},
   {
     title: "Kat Hizmetleri",
     path: "/housekeeping",
