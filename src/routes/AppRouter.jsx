@@ -10,6 +10,7 @@ import Rooms from "../pages/Rooms/Rooms";
 import Housekeeping from "../pages/Housekeeping/Housekeeping";
 import Staff from "../pages/Staff/Staff";
 import Reports from "../pages/Reports/Reports";
+import Reservations from "../pages/Reservations/Reservations";
 import Settings from "../pages/Settings/Settings";
 import Guests from "../pages/Guests/guests";
 
@@ -22,12 +23,13 @@ function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
             <Route path="/guests" element={<Guests />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/rooms" element={<Rooms />} />
-          <Route path="/housekeeping" element={<Housekeeping />} />
-          <Route path="/staff" element={<Staff />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
+            <Route path="/reservations" element={<Reservations />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/housekeeping" element={<Housekeeping />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
 
