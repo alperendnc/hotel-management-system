@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { useAuth } from "../../context/AuthContext";
 import { useThemeMode } from "../../context/ThemeContext";
+
 import {
   Alert,
   Box,
@@ -15,10 +18,12 @@ import {
   Snackbar,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
 import {
+  FaArrowRotateLeft,
   FaBell,
   FaBuilding,
   FaFloppyDisk,
@@ -26,6 +31,8 @@ import {
   FaPalette,
   FaShieldHalved,
 } from "react-icons/fa6";
+
+const SETTINGS_STORAGE_KEY = "hotelManagementSettings";
 
 const initialHotelSettings = {
   hotelName: "Grand Palace Hotel",
@@ -48,11 +55,25 @@ const initialNotificationSettings = {
 };
 
 const initialSystemSettings = {
-  darkMode: false,
   compactMenu: false,
   automaticBackup: true,
   twoFactorAuthentication: false,
 };
+
+function getStoredSettings() {
+  try {
+    const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+
+    if (!storedSettings) {
+      return null;
+    }
+
+    return JSON.parse(storedSettings);
+  } catch (error) {
+    console.error("Ayarlar okunurken hata oluştu:", error);
+    return null;
+  }
+}
 
 function SettingsSection({ icon, title, description, children }) {
   return (
@@ -105,12 +126,7 @@ function SettingsSection({ icon, title, description, children }) {
           </Box>
 
           <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-              }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
 
@@ -133,21 +149,69 @@ function SettingsSection({ icon, title, description, children }) {
 }
 
 function Settings() {
+  const { user, updateUser } = useAuth();
   const { isDarkMode, setThemeMode } = useThemeMode();
-  
-  const [hotelSettings, setHotelSettings] = useState(
-    initialHotelSettings,
-  );
 
-  const [notificationSettings, setNotificationSettings] = useState(
-    initialNotificationSettings,
-  );
+  const [hotelSettings, setHotelSettings] = useState(() => {
+    const storedSettings = getStoredSettings();
 
-  const [systemSettings, setSystemSettings] = useState(
-    initialSystemSettings,
-  );
+    return {
+      ...initialHotelSettings,
+      ...storedSettings?.hotel,
+    };
+  });
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState(() => {
+    const storedSettings = getStoredSettings();
+
+    return {
+      ...initialNotificationSettings,
+      ...storedSettings?.notifications,
+    };
+  });
+
+  const [systemSettings, setSystemSettings] = useState(() => {
+    const storedSettings = getStoredSettings();
+
+    return {
+      ...initialSystemSettings,
+      ...storedSettings?.system,
+    };
+  });
+
+  const [errors, setErrors] = useState({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
 
   const handleHotelSettingsChange = (event) => {
     const { name, value } = event.target;
@@ -156,6 +220,13 @@ function Settings() {
       ...currentSettings,
       [name]: value,
     }));
+
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: "",
+    }));
+
+    setHasUnsavedChanges(true);
   };
 
   const handleNotificationChange = (event) => {
@@ -165,6 +236,8 @@ function Settings() {
       ...currentSettings,
       [name]: checked,
     }));
+
+    setHasUnsavedChanges(true);
   };
 
   const handleSystemSettingsChange = (event) => {
@@ -174,25 +247,136 @@ function Settings() {
       ...currentSettings,
       [name]: checked,
     }));
+
+    setHasUnsavedChanges(true);
+  };
+
+  const handleThemeChange = (event) => {
+    const newMode = event.target.checked ? "dark" : "light";
+
+    setThemeMode(newMode);
+    setHasUnsavedChanges(true);
+  };
+
+  const validateSettings = () => {
+    const newErrors = {};
+
+    if (!hotelSettings.hotelName.trim()) {
+      newErrors.hotelName = "Otel adı zorunludur.";
+    }
+
+    if (!hotelSettings.email.trim()) {
+      newErrors.email = "E-posta adresi zorunludur.";
+    } else {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailPattern.test(hotelSettings.email.trim())) {
+        newErrors.email = "Geçerli bir e-posta adresi girin.";
+      }
+    }
+
+    if (!hotelSettings.phone.trim()) {
+      newErrors.phone = "Telefon numarası zorunludur.";
+    } else {
+      const phoneDigits = hotelSettings.phone.replace(/\D/g, "");
+
+      if (phoneDigits.length < 10) {
+        newErrors.phone = "Telefon numarası en az 10 rakam içermelidir.";
+      }
+    }
+
+    if (!hotelSettings.address.trim()) {
+      newErrors.address = "Adres zorunludur.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSaveSettings = () => {
+    if (!validateSettings()) {
+      showSnackbar(
+        "Lütfen hatalı veya eksik alanları kontrol edin.",
+        "error",
+      );
+      return;
+    }
+
     const settings = {
-      hotel: hotelSettings,
+      hotel: {
+        ...hotelSettings,
+        hotelName: hotelSettings.hotelName.trim(),
+        email: hotelSettings.email.trim(),
+        phone: hotelSettings.phone.trim(),
+        address: hotelSettings.address.trim(),
+      },
       notifications: notificationSettings,
-      system: systemSettings,
+      system: {
+        ...systemSettings,
+        darkMode: isDarkMode,
+      },
     };
 
-    localStorage.setItem(
-      "hotelManagementSettings",
-      JSON.stringify(settings),
-    );
+    try {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify(settings),
+      );
 
-    setSnackbarOpen(true);
+      if (typeof updateUser === "function") {
+        updateUser({
+          ...user,
+          hotelName: settings.hotel.hotelName,
+          email: settings.hotel.email,
+        });
+      }
+
+      setHotelSettings(settings.hotel);
+      setHasUnsavedChanges(false);
+
+      showSnackbar("Ayarlar başarıyla kaydedildi.");
+    } catch (error) {
+      console.error("Ayarlar kaydedilirken hata oluştu:", error);
+
+      showSnackbar(
+        "Ayarlar kaydedilirken bir hata oluştu.",
+        "error",
+      );
+    }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const handleResetSettings = () => {
+    const shouldReset = window.confirm(
+      "Tüm ayarları varsayılan değerlere döndürmek istediğinize emin misiniz?",
+    );
+
+    if (!shouldReset) {
+      return;
+    }
+
+    setHotelSettings(initialHotelSettings);
+    setNotificationSettings(initialNotificationSettings);
+    setSystemSettings(initialSystemSettings);
+    setThemeMode("light");
+    setErrors({});
+    setHasUnsavedChanges(true);
+
+    showSnackbar(
+      "Varsayılan ayarlar yüklendi. Kalıcı olması için kaydedin.",
+      "info",
+    );
+  };
+
+  const handleSnackbarClose = (_event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setSnackbar((currentSnackbar) => ({
+      ...currentSnackbar,
+      open: false,
+    }));
   };
 
   return (
@@ -235,22 +419,68 @@ function Settings() {
           </Typography>
         </Box>
 
-        <Button
-          type="button"
-          variant="contained"
-          startIcon={<FaFloppyDisk />}
-          onClick={handleSaveSettings}
+        <Box
           sx={{
-            minHeight: 42,
-            px: 2.5,
-            borderRadius: 2.5,
-            textTransform: "none",
-            fontWeight: 700,
+            display: "flex",
+            flexDirection: {
+              xs: "column",
+              sm: "row",
+            },
+            width: {
+              xs: "100%",
+              sm: "auto",
+            },
+            gap: 1.25,
           }}
         >
-          Ayarları Kaydet
-        </Button>
+          <Tooltip title="Ayarları varsayılan değerlere döndür">
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={<FaArrowRotateLeft />}
+              onClick={handleResetSettings}
+              sx={{
+                minHeight: 42,
+                px: 2.5,
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 700,
+              }}
+            >
+              Varsayılana Dön
+            </Button>
+          </Tooltip>
+
+          <Button
+            type="button"
+            variant="contained"
+            startIcon={<FaFloppyDisk />}
+            onClick={handleSaveSettings}
+            disabled={!hasUnsavedChanges}
+            sx={{
+              minHeight: 42,
+              px: 2.5,
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            Ayarları Kaydet
+          </Button>
+        </Box>
       </Box>
+
+      {hasUnsavedChanges && (
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 2.5,
+            borderRadius: 2.5,
+          }}
+        >
+          Kaydedilmemiş değişiklikleriniz bulunuyor.
+        </Alert>
+      )}
 
       <Box
         sx={{
@@ -290,6 +520,8 @@ function Settings() {
                 name="hotelName"
                 value={hotelSettings.hotelName}
                 onChange={handleHotelSettingsChange}
+                error={Boolean(errors.hotelName)}
+                helperText={errors.hotelName}
                 fullWidth
               />
 
@@ -299,6 +531,8 @@ function Settings() {
                 type="email"
                 value={hotelSettings.email}
                 onChange={handleHotelSettingsChange}
+                error={Boolean(errors.email)}
+                helperText={errors.email}
                 fullWidth
               />
 
@@ -307,6 +541,8 @@ function Settings() {
                 name="phone"
                 value={hotelSettings.phone}
                 onChange={handleHotelSettingsChange}
+                error={Boolean(errors.phone)}
+                helperText={errors.phone}
                 fullWidth
               />
 
@@ -315,6 +551,8 @@ function Settings() {
                 name="address"
                 value={hotelSettings.address}
                 onChange={handleHotelSettingsChange}
+                error={Boolean(errors.address)}
+                helperText={errors.address}
                 fullWidth
               />
 
@@ -358,17 +596,11 @@ function Settings() {
                   label="Para Birimi"
                   onChange={handleHotelSettingsChange}
                 >
-                  <MenuItem value="TRY">
-                    Türk Lirası (₺)
-                  </MenuItem>
-
+                  <MenuItem value="TRY">Türk Lirası (₺)</MenuItem>
                   <MenuItem value="USD">
                     Amerikan Doları ($)
                   </MenuItem>
-
-                  <MenuItem value="EUR">
-                    Euro (€)
-                  </MenuItem>
+                  <MenuItem value="EUR">Euro (€)</MenuItem>
                 </Select>
               </FormControl>
 
@@ -415,7 +647,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -438,7 +669,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -463,7 +693,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -488,7 +717,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -519,19 +747,16 @@ function Settings() {
             >
               <FormControlLabel
                 control={
-                <Switch
-                 checked={isDarkMode}
-                  onChange={(event) =>
-                    setThemeMode(event.target.checked ? "dark" : "light")
-                 }
-            />
+                  <Switch
+                    checked={isDarkMode}
+                    onChange={handleThemeChange}
+                  />
                 }
                 label="Karanlık mod"
                 sx={{
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -554,7 +779,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -588,7 +812,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -613,7 +836,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -638,7 +860,6 @@ function Settings() {
                   minHeight: 48,
                   m: 0,
                   justifyContent: "space-between",
-
                   "& .MuiFormControlLabel-label": {
                     fontWeight: 500,
                   },
@@ -668,7 +889,6 @@ function Settings() {
                 minHeight: 48,
                 m: 0,
                 justifyContent: "space-between",
-
                 "& .MuiFormControlLabel-label": {
                   fontWeight: 500,
                 },
@@ -683,16 +903,17 @@ function Settings() {
                 borderRadius: 2.5,
               }}
             >
-              İki aşamalı doğrulama, hesabınıza ek bir güvenlik katmanı
-              ekler.
+              İki aşamalı doğrulama tercihi şu anda yalnızca ayar
+              olarak kaydedilir. Gerçek doğrulama akışı backend
+              aşamasında eklenecek.
             </Alert>
           </SettingsSection>
         </Box>
       </Box>
 
       <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
+        open={snackbar.open}
+        autoHideDuration={3500}
         onClose={handleSnackbarClose}
         anchorOrigin={{
           vertical: "bottom",
@@ -700,7 +921,7 @@ function Settings() {
         }}
       >
         <Alert
-          severity="success"
+          severity={snackbar.severity}
           variant="filled"
           onClose={handleSnackbarClose}
           sx={{
@@ -708,7 +929,7 @@ function Settings() {
             borderRadius: 2.5,
           }}
         >
-          Ayarlar başarıyla kaydedildi.
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
